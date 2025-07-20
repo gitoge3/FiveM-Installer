@@ -3,9 +3,18 @@ set -euo pipefail
 
 INSTALL_DIR="$HOME/FXServer/server"
 LOG_FILE="$HOME/fivem_log.txt"
-FX_ARTIFACTS_URL="https://runtime.fivem.net/artifacts/fivem/build_proot_linux/master/"
 FX_TAR="fx.tar.xz"
 PACKAGES="wget curl xz-utils screen"
+
+echo "Bitte gib die Download-URL der neuesten FiveM Linux Build an."
+echo "Du findest sie hier: https://runtime.fivem.net/artifacts/fivem/build_proot_linux/master/"
+echo "Beispiel einer URL: https://runtime.fivem.net/artifacts/fivem/build_proot_linux/master/#####-commitHash/fx.tar.xz"
+read -rp "Download-URL: " DOWNLOAD_URL
+
+if [[ -z "$DOWNLOAD_URL" ]]; then
+  echo "Keine URL eingegeben. Beende."
+  exit 1
+fi
 
 echo "[*] Pakete installieren (non-interactive)..."
 export DEBIAN_FRONTEND=noninteractive
@@ -16,11 +25,7 @@ echo "[*] Installationsordner erstellen: $INSTALL_DIR"
 mkdir -p "$INSTALL_DIR"
 cd "$INSTALL_DIR"
 
-echo "[*] Neueste Buildnummer ermitteln..."
-LATEST_BUILD=$(curl -s "$FX_ARTIFACTS_URL" | grep -oP '(?<=href=")[0-9]+-[a-f0-9]+(?=/")' | sort -n | tail -1)
-DOWNLOAD_URL="${FX_ARTIFACTS_URL}${LATEST_BUILD}/fx.tar.xz"
-
-echo "[*] Neueste Version herunterladen..."
+echo "[*] Lade Build herunter von: $DOWNLOAD_URL"
 wget -q -O "$FX_TAR" "$DOWNLOAD_URL"
 
 echo "[*] Alte Dateien entfernen..."
@@ -30,7 +35,7 @@ echo "[*] Entpacke neue Version..."
 tar xf "$FX_TAR"
 rm "$FX_TAR"
 
-echo "[*] txAdmin starten..."
+echo "[*] Starte txAdmin in Screen..."
 chmod +x ./run.sh
 screen -dmS fivem_auto ./run.sh +set serverProfile default +set txAdminPort 40120
 
