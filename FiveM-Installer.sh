@@ -6,10 +6,7 @@ LOG_FILE="$HOME/fivem_log.txt"
 FX_TAR="fx.tar.xz"
 PACKAGES="wget curl xz-utils screen"
 
-echo "Bitte gib die Download-URL der neuesten FiveM Linux Build an."
-echo "Du findest sie hier: https://runtime.fivem.net/artifacts/fivem/build_proot_linux/master/"
-echo "Beispiel einer URL: https://runtime.fivem.net/artifacts/fivem/build_proot_linux/master/#####-commitHash/fx.tar.xz"
-read -rp "Download-URL: " DOWNLOAD_URL
+read -rp "Bitte gib die Download-URL der neuesten FiveM Linux Build ein: " DOWNLOAD_URL
 
 if [[ -z "$DOWNLOAD_URL" ]]; then
   echo "Keine URL eingegeben. Beende."
