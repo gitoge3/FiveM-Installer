@@ -32,17 +32,39 @@ echo "[*] Entpacke neue Version..."
 tar xf "$FX_TAR"
 rm "$FX_TAR"
 
-echo "[*] Starte txAdmin in Screen..."
+echo "[*] txAdmin in Screen starten..."
 chmod +x ./run.sh
-screen -dmS fivem_auto ./run.sh +set serverProfile default +set txAdminPort 40120
 
-CRON_CMD="@reboot bash <(curl -s https://raw.githubusercontent.com/gitoge3/FiveM-Installer/main/FiveM-Installer.sh) >> $LOG_FILE 2>&1"
+# Screen-Session-Name
+SCREEN_NAME="txadmin"
 
-if ! crontab -l 2>/dev/null | grep -Fq "$CRON_CMD"; then
-  echo "[*] Autostart in Crontab eintragen..."
-  (crontab -l 2>/dev/null; echo "$CRON_CMD") | crontab -
+# txAdmin starten
+screen -dmS "$SCREEN_NAME" ./run.sh +set serverProfile default +set txAdminPort 40120
+
+echo "[*] Warte 10 Sekunden auf txAdmin-Start..."
+sleep 10
+
+echo "[*] Suche Master PIN in Screen-Output..."
+
+# Screen-Log temporär speichern
+TMP_LOG=$(mktemp)
+screen -S "$SCREEN_NAME" -X hardcopy "$TMP_LOG"
+
+# Master PIN ausgeben (Beispielmuster: Master password: 1234)
+MASTER_PIN=$(grep -i 'Master password' "$TMP_LOG" | head -1 || true)
+
+if [[ -n "$MASTER_PIN" ]]; then
+  echo ""
+  echo "=== txAdmin Master PIN ==="
+  echo "$MASTER_PIN"
+  echo "=========================="
+else
+  echo "Master PIN konnte nicht gefunden werden. Öffne die Screen-Session manuell mit:"
+  echo "screen -r $SCREEN_NAME"
 fi
+
+rm "$TMP_LOG"
 
 echo ""
 echo "[✓] Fertig! txAdmin läuft unter http://<deine-ip>:40120"
-echo "[i] Logs in $LOG_FILE"
+echo "[i] Logs werden in $LOG_FILE gespeichert (wenn aktiviert)."
