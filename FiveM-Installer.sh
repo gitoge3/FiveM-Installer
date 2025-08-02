@@ -1,70 +1,32 @@
-#!/bin/bash
-set -euo pipefail
+echo 'FiveM Linux Installer'
 
-INSTALL_DIR="$HOME/FXServer/server"
-LOG_FILE="$HOME/fivem_log.txt"
-FX_TAR="fx.tar.xz"
-PACKAGES="wget curl xz-utils screen"
+apt update && apt upgrade
 
-read -rp "Bitte gib die Download-URL der neuesten FiveM Linux Build ein: " DOWNLOAD_URL
+apt install xf tar
 
-if [[ -z "$DOWNLOAD_URL" ]]; then
-  echo "Keine URL eingegeben. Beende."
-  exit 1
-fi
+mkdir -p /home/FiveM/server
+cd /home/FiveM/server
 
-echo "[*] Pakete installieren (non-interactive)..."
-export DEBIAN_FRONTEND=noninteractive
-sudo apt-get update -qq
-sudo apt-get install -y -qq $PACKAGES
+echo 'Geben Sie den Link zu den FiveM-Artifakten ein:'
+read link
+wget $link
 
-echo "[*] Installationsordner erstellen: $INSTALL_DIR"
-mkdir -p "$INSTALL_DIR"
-cd "$INSTALL_DIR"
+echo 'Entpacken der FiveM-Dateien...'
+tar xf fx.tar.xz
+echo 'Artifacts installiert'
 
-echo "[*] Lade Build herunter von: $DOWNLOAD_URL"
-wget -q -O "$FX_TAR" "$DOWNLOAD_URL"
+rm -r fx.tar.xz
 
-echo "[*] Alte Dateien entfernen..."
-rm -rf alpine citizen data nui-builds server fxe* run.sh || true
+echo 'Installieren von Screen...'
+apt install screen
 
-echo "[*] Entpacke neue Version..."
-tar xf "$FX_TAR"
-rm "$FX_TAR"
 
-echo "[*] txAdmin in Screen starten..."
-chmod +x ./run.sh
+echo ' crontab wird installiert und eingerichtet'
 
-# Screen-Session-Name
-SCREEN_NAME="txadmin"
+(crontab -l 2>/dev/null; echo "@reboot /bin/bash /home/FiveM/server/run.sh > /home/FiveM/server/cron.log 2>&1") | crontab -
 
-# txAdmin starten
-screen -dmS "$SCREEN_NAME" ./run.sh +set serverProfile default +set txAdminPort 40120
+cd /home/FiveM/server && screen ./run.sh
 
-echo "[*] Warte 10 Sekunden auf txAdmin-Start..."
-sleep 10
+echo 'Erfolgreich installiert! Jetzt müssen Sie in den Ordner cd /home/FiveM/server wechseln und die Datei run.sh ausführen --> ./run.sh'
 
-echo "[*] Suche Master PIN in Screen-Output..."
-
-# Screen-Log temporär speichern
-TMP_LOG=$(mktemp)
-screen -S "$SCREEN_NAME" -X hardcopy "$TMP_LOG"
-
-# Master PIN ausgeben (Beispielmuster: Master password: 1234)
-MASTER_PIN=$(grep -i 'Master password' "$TMP_LOG" | head -1 || true)
-
-if [[ -n "$MASTER_PIN" ]]; then
-  echo ""
-  echo "=== txAdmin Master PIN ==="
-  echo "$MASTER_PIN"
-  echo "=========================="
-else
-  echo "Master PIN konnte nicht gefunden werden. Öffne die Screen-Session manuell mit:"
-  echo "screen -r $SCREEN_NAME"
-fi
-
-rm "$TMP_LOG"
-
-echo ""
-echo "[✓] Fertig! txAdmin läuft unter http://<deine-ip>:40120"
-echo "[i] Logs werden in $LOG_FILE gespeichert (wenn aktiviert)."
+echo 'Außerdem wurde ein Crontab erfolgreich installiert. Bei einen Server neustart wird FIveM/Tx Admin automatisch Gestartet.'
